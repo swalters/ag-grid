@@ -15,7 +15,24 @@ export class PopupService {
     // this.popupService.setPopupParent(this.eRootPanel.getGui());
 
     private getPopupParent(): HTMLElement {
-        return this.gridCore.getRootGui();
+        //singletree use outer grid container
+        return this.getOuterContainer(this.gridCore.getRootGui());
+    }
+
+    //singletree method to find outermost grid container
+    private getOuterContainer(element:HTMLElement) {
+        var lastFoundContainer:HTMLElement;
+        var traverseElement = element;
+        while (traverseElement.parentNode) {
+            if (traverseElement.id == 'borderLayout_eRootPanel') {
+                lastFoundContainer = traverseElement;
+            }
+            traverseElement = traverseElement.parentElement;
+        }
+
+        return lastFoundContainer
+          ? lastFoundContainer
+          : element;
     }
 
     public positionPopupForMenu(params: {eventSource: any, ePopup: HTMLElement}) {
