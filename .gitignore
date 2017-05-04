@@ -4,15 +4,7 @@ web-root/
 src/ts/*.js
 src/ts/**/*.js
 
-.idea/encodings.xml
-
-.idea/misc.xml
-
-.idea/modules.xml
-
-.idea/vcs.xml
-
-.idea/workspace.xml
+.idea/
 
 ag-grid.iml
 
