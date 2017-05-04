@@ -23,7 +23,7 @@ export class PopupService {
     private getOuterContainer(element:HTMLElement) {
         var lastFoundContainer:HTMLElement;
         var traverseElement = element;
-        while (traverseElement.parentNode) {
+        while (traverseElement.parentElement) {
             if (traverseElement.id == 'borderLayout_eRootPanel') {
                 lastFoundContainer = traverseElement;
             }
