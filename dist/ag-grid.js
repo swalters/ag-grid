@@ -16193,7 +16193,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    // this.popupService.setPopupParent(this.eRootPanel.getGui());
 	    PopupService.prototype.getPopupParent = function () {
-	        return this.gridCore.getRootGui();
+	        //singletree use outer grid container
+	        return this.getOuterContainer(this.gridCore.getRootGui());
+	    };
+	    //singletree method to find outermost grid container
+	    PopupService.prototype.getOuterContainer = function (element) {
+	        var lastFoundContainer;
+	        var traverseElement = element;
+	        while (traverseElement.parentElement) {
+	            if (traverseElement.id == 'borderLayout_eRootPanel') {
+	                lastFoundContainer = traverseElement;
+	            }
+	            traverseElement = traverseElement.parentElement;
+	        }
+	        return lastFoundContainer
+	            ? lastFoundContainer
+	            : element;
 	    };
 	    PopupService.prototype.positionPopupForMenu = function (params) {
 	        var sourceRect = params.eventSource.getBoundingClientRect();
@@ -20898,10 +20913,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    GroupCellRenderer.prototype.addValueElement = function () {
 	        var params = this.params;
 	        var rowNode = this.params.node;
-	        if (params.innerRenderer) {
-	            this.createFromInnerRenderer();
-	        }
-	        else if (rowNode.footer) {
+	        //singletree changed to properly present group values when using innerRenderer
+	        if (rowNode.footer) {
 	            this.createFooterCell();
 	        }
 	        else if (rowNode.group) {
@@ -20909,7 +20922,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.addChildCount();
 	        }
 	        else {
-	            this.createLeafCell();
+	            if (params.innerRenderer) {
+	                this.createFromInnerRenderer();
+	            }
+	            else {
+	                this.createLeafCell();
+	            }
 	        }
 	    };
 	    GroupCellRenderer.prototype.createFromInnerRenderer = function () {
@@ -22740,15 +22758,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        switch (this.type) {
 	            case HeaderRowType.COLUMN:
 	                if (this.isUsingOldHeaderRenderer(columnGroupChild)) {
-	                    ////// DEPRECATED - TAKE THIS OUT IN V9
-	                    if (!warningGiven) {
-	                        console.warn('ag-Grid: since v8, custom headers are now done using components. Please refer to the documentation https://www.ag-grid.com/javascript-grid-header-rendering/. Support for the old way will be dropped in v9.');
-	                        warningGiven = true;
-	                    }
 	                    result = new renderedHeaderCell_1.RenderedHeaderCell(columnGroupChild, this.eRoot, this.dropTarget, this.pinned);
 	                }
 	                else {
-	                    // the future!!!
 	                    result = new headerWrapperComp_1.HeaderWrapperComp(columnGroupChild, this.eRoot, this.dropTarget, this.pinned);
 	                }
 	                break;
@@ -22786,6 +22798,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	         *let filterComponent:BaseFilter<any, any, any> = <any>this.filterManager.getFilterComponent(column);
 	         */
 	        var baseParams = {
+	            column: column,
 	            currentParentModel: function () {
 	                var filterComponent = _this.filterManager.getFilterComponent(column);
 	                return (filterComponent.getNullableModel) ?
@@ -22847,8 +22860,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    __metadata("design:returntype", void 0)
 	], HeaderRowComp.prototype, "init", null);
 	exports.HeaderRowComp = HeaderRowComp;
-	// remove this in v9, when we take out support for the old headers
-	var warningGiven = false;
 
 
 /***/ }),

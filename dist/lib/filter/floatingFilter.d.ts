@@ -6,9 +6,11 @@ import { SerializedDateFilter } from "./dateFilter";
 import { SerializedNumberFilter } from "./numberFilter";
 import { IComponent } from "../interfaces/iComponent";
 import { Component } from "../widgets/component";
+import { Column } from "../entities/column";
 export interface FloatingFilterChange {
 }
 export interface IFloatingFilterParams<M, F extends FloatingFilterChange> {
+    column: Column;
     onFloatingFilterChanged: (change: F | M) => void;
     currentParentModel: () => M;
     suppressFilterButton: boolean;

@@ -159,15 +159,9 @@ var HeaderRowComp = (function (_super) {
         switch (this.type) {
             case HeaderRowType.COLUMN:
                 if (this.isUsingOldHeaderRenderer(columnGroupChild)) {
-                    ////// DEPRECATED - TAKE THIS OUT IN V9
-                    if (!warningGiven) {
-                        console.warn('ag-Grid: since v8, custom headers are now done using components. Please refer to the documentation https://www.ag-grid.com/javascript-grid-header-rendering/. Support for the old way will be dropped in v9.');
-                        warningGiven = true;
-                    }
                     result = new renderedHeaderCell_1.RenderedHeaderCell(columnGroupChild, this.eRoot, this.dropTarget, this.pinned);
                 }
                 else {
-                    // the future!!!
                     result = new headerWrapperComp_1.HeaderWrapperComp(columnGroupChild, this.eRoot, this.dropTarget, this.pinned);
                 }
                 break;
@@ -205,6 +199,7 @@ var HeaderRowComp = (function (_super) {
          *let filterComponent:BaseFilter<any, any, any> = <any>this.filterManager.getFilterComponent(column);
          */
         var baseParams = {
+            column: column,
             currentParentModel: function () {
                 var filterComponent = _this.filterManager.getFilterComponent(column);
                 return (filterComponent.getNullableModel) ?
@@ -266,5 +261,3 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], HeaderRowComp.prototype, "init", null);
 exports.HeaderRowComp = HeaderRowComp;
-// remove this in v9, when we take out support for the old headers
-var warningGiven = false;

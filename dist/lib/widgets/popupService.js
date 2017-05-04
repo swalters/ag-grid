@@ -25,7 +25,22 @@ var PopupService = (function () {
     }
     // this.popupService.setPopupParent(this.eRootPanel.getGui());
     PopupService.prototype.getPopupParent = function () {
-        return this.gridCore.getRootGui();
+        //singletree use outer grid container
+        return this.getOuterContainer(this.gridCore.getRootGui());
+    };
+    //singletree method to find outermost grid container
+    PopupService.prototype.getOuterContainer = function (element) {
+        var lastFoundContainer;
+        var traverseElement = element;
+        while (traverseElement.parentElement) {
+            if (traverseElement.id == 'borderLayout_eRootPanel') {
+                lastFoundContainer = traverseElement;
+            }
+            traverseElement = traverseElement.parentElement;
+        }
+        return lastFoundContainer
+            ? lastFoundContainer
+            : element;
     };
     PopupService.prototype.positionPopupForMenu = function (params) {
         var sourceRect = params.eventSource.getBoundingClientRect();
