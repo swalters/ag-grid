@@ -198,15 +198,19 @@ export class GroupCellRenderer extends Component implements ICellRenderer {
     private addValueElement(): void {
         let params = this.params;
         let rowNode = this.params.node;
-        if (params.innerRenderer) {
-            this.createFromInnerRenderer();
-        } else if (rowNode.footer) {
+        //singletree changed to properly present group values when using innerRenderer
+        if (rowNode.footer) {
             this.createFooterCell();
         } else if (rowNode.group) {
             this.createGroupCell();
             this.addChildCount();
         } else {
-            this.createLeafCell();
+            if (params.innerRenderer) {
+                this.createFromInnerRenderer();
+            }
+            else {
+                this.createLeafCell();
+            }
         }
     }
 
