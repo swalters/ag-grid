@@ -28,6 +28,8 @@ import {RowContainerComponent} from "../rendering/rowContainerComponent";
 import {GridCell} from "../entities/gridCell";
 import {RowNode} from "../entities/rowNode";
 import {PaginationProxy} from "../rowModels/paginationProxy";
+import {PopupEditorWrapper} from "../rendering/cellEditors/popupEditorWrapper";
+import {RenderedCell} from "../rendering/renderedCell";
 
 // in the html below, it is important that there are no white space between some of the divs, as if there is white space,
 // it won't render correctly in safari, as safari renders white space as a gap
@@ -296,17 +298,20 @@ export class GridPanel extends BeanStub {
                 let elementWithFocus = event.relatedTarget;
 
                 // see if the element the focus is going to is part of the grid
-                let ourBodyFound = false;
+                let clickInsideGrid = false;
                 let pointer: any = elementWithFocus;
-                while (_.exists(pointer)) {
+
+                while (_.exists(pointer) && !clickInsideGrid) {
+
+                    let isPopup = !!this.gridOptionsWrapper.getDomData(pointer, PopupEditorWrapper.DOM_KEY_POPUP_EDITOR_WRAPPER);
+                    let isBody = this.eBody == pointer;
+
+                    clickInsideGrid = isPopup || isBody;
+
                     pointer = pointer.parentNode;
-                    if (pointer===this.eBody) {
-                        ourBodyFound = true;
-                    }
                 }
 
-                // if it is not part fo the grid, then we have lost focus
-                if (!ourBodyFound) {
+                if (!clickInsideGrid) {
                     this.rowRenderer.stopEditing();
                 }
             })
@@ -355,6 +360,12 @@ export class GridPanel extends BeanStub {
         this.addDestroyableEventListener(this.eventService, Events.EVENT_ITEMS_REMOVED, this.onRowDataChanged.bind(this));
 
         this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_HEADER_HEIGHT, this.setBodyAndHeaderHeights.bind(this));
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_PIVOT_HEADER_HEIGHT, this.setBodyAndHeaderHeights.bind(this));
+
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_GROUP_HEADER_HEIGHT, this.setBodyAndHeaderHeights.bind(this));
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_PIVOT_GROUP_HEADER_HEIGHT, this.setBodyAndHeaderHeights.bind(this));
+
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_FLOATING_FILTERS_HEIGHT, this.setBodyAndHeaderHeights.bind(this));
     }
 
     private addDragListeners(): void {
@@ -423,14 +434,15 @@ export class GridPanel extends BeanStub {
 
     private getRowForEvent(event: MouseEvent | KeyboardEvent): RenderedRow {
 
-        var domDataKey = this.gridOptionsWrapper.getDomDataKey();
         var sourceElement = _.getTarget(event);
 
         while (sourceElement) {
-            var domData = (<any>sourceElement)[domDataKey];
-            if (domData && domData.renderedRow) {
-                return <RenderedRow> domData.renderedRow;
+
+            let renderedRow = this.gridOptionsWrapper.getDomData(sourceElement, RenderedRow.DOM_DATA_KEY_RENDERED_ROW);
+            if (renderedRow) {
+                return renderedRow;
             }
+
             sourceElement = sourceElement.parentElement;
         }
 
@@ -1441,6 +1453,15 @@ export class GridPanel extends BeanStub {
 
         let changeDetected = false;
 
+        // if we are v scrolling, then one of these will have the scroll position.
+        // we us this inside the if(changedDetected), so we don't always use it, however
+        // it is changed when we make a pinned panel not visible, so we have to check it
+        // before we change display on the pinned panels
+        let scrollTop = Math.max(
+            this.eBodyViewport.scrollTop,
+            this.ePinnedLeftColsViewport.scrollTop,
+            this.ePinnedRightColsViewport.scrollTop);
+
         let showLeftPinned = this.columnController.isPinningLeft();
         if (showLeftPinned !== this.pinningLeft) {
             this.pinningLeft = showLeftPinned;
@@ -1460,12 +1481,6 @@ export class GridPanel extends BeanStub {
         if (changeDetected) {
             let bodyVScrollActive = this.isBodyVerticalScrollActive();
             this.eBodyViewport.style.overflowY = bodyVScrollActive ? 'auto' : 'hidden';
-
-            // if we are v scrolling, then one of these will have the scroll position
-            let scrollTop = Math.max(
-                this.eBodyViewport.scrollTop,
-                this.ePinnedLeftColsViewport.scrollTop,
-                this.ePinnedRightColsViewport.scrollTop);
 
             // the body either uses it's scroll (when scrolling) or it's style.top
             // (when following the scroll of a pinned section), so we need to set it
@@ -1501,14 +1516,34 @@ export class GridPanel extends BeanStub {
             return;
         }
 
-        var headerHeight = this.gridOptionsWrapper.getHeaderHeight();
-        var numberOfRowsInHeader = this.columnController.getHeaderRowCount();
-        var totalHeaderHeight = headerHeight * numberOfRowsInHeader;
+        let headerRowCount = this.columnController.getHeaderRowCount();
 
-        let floatingFilterActive = this.gridOptionsWrapper.isFloatingFilter() && !this.columnController.isPivotMode();
-        if (floatingFilterActive) {
-            totalHeaderHeight += 20;
+        let totalHeaderHeight: number;
+        let numberOfFloating = 0;
+        let groupHeight:number;
+        let headerHeight:number;
+        if (!this.columnController.isPivotMode()){
+            _.removeCssClass(this.eHeader, 'ag-pivot-on');
+            _.addCssClass(this.eHeader, 'ag-pivot-off');
+            if (this.gridOptionsWrapper.isFloatingFilter()){
+                headerRowCount ++;
+            }
+            numberOfFloating = (this.gridOptionsWrapper.isFloatingFilter()) ? 1 : 0;
+            groupHeight = this.gridOptionsWrapper.getGroupHeaderHeight();
+            headerHeight = this.gridOptionsWrapper.getHeaderHeight();
+        }else{
+            _.removeCssClass(this.eHeader, 'ag-pivot-off');
+            _.addCssClass(this.eHeader, 'ag-pivot-on');
+            numberOfFloating = 0;
+            groupHeight = this.gridOptionsWrapper.getPivotGroupHeaderHeight();
+            headerHeight = this.gridOptionsWrapper.getPivotHeaderHeight();
         }
+        let numberOfNonGroups = 1 + numberOfFloating;
+        let numberOfGroups = headerRowCount - numberOfNonGroups;
+
+        totalHeaderHeight = numberOfFloating * this.gridOptionsWrapper.getFloatingFiltersHeight();
+        totalHeaderHeight += numberOfGroups * groupHeight;
+        totalHeaderHeight += headerHeight;
 
         this.eHeader.style['height'] = totalHeaderHeight + 'px';
 

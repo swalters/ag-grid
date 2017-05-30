@@ -28,10 +28,11 @@ export class ComponentUtil {
     ];
 
     public static NUMBER_PROPERTIES = [
-        'rowHeight','rowBuffer','colWidth','headerHeight','groupDefaultExpanded',
+        'rowHeight','rowBuffer','colWidth','headerHeight','groupHeaderHeight', 'floatingFiltersHeight',
+        'pivotHeaderHeight', 'pivotGroupHeaderHeight', 'groupDefaultExpanded',
         'minColWidth','maxColWidth','viewportRowModelPageSize','viewportRowModelBufferSize',
-        'layoutInterval','autoSizePadding','maxPagesInCache','maxConcurrentDatasourceRequests',
-        'paginationOverflowSize','paginationPageSize','infiniteBlockSize','infiniteInitialRowCount',
+        'layoutInterval','autoSizePadding','maxBlocksInCache','maxConcurrentDatasourceRequests',
+        'cacheOverflowSize','paginationPageSize','infiniteBlockSize','infiniteInitialRowCount',
         'scrollbarWidth','paginationStartPage','infiniteBlockSize'
     ];
 
@@ -46,16 +47,16 @@ export class ComponentUtil {
         'singleClickEdit','suppressLoadingOverlay','suppressNoRowsOverlay','suppressAutoSize',
         'suppressParentsInRowNodes','showToolPanel','suppressColumnMoveAnimation','suppressMovableColumns',
         'suppressFieldDotNotation','enableRangeSelection','suppressEnterprise','rowGroupPanelShow',
-        'pivotPanelShow', 'suppressTouch', 'allowContextMenuWithControlKey',
+        'pivotPanelShow', 'suppressTouch', 'suppressAsyncEvents', 'allowContextMenuWithControlKey',
         'suppressContextMenu','suppressMenuFilterPanel','suppressMenuMainPanel','suppressMenuColumnPanel',
         'enableStatusBar','rememberGroupStateWhenNewData', 'enableCellChangeFlash', 'suppressDragLeaveHidesColumns',
         'suppressMiddleClickScrolls','suppressPreventDefaultOnMouseWheel', 'suppressUseColIdForGroups',
-        'suppressCopyRowsToClipboard','pivotMode', 'suppressAggFuncInHeader', 'suppressColumnVirtualisation',
+        'suppressCopyRowsToClipboard','pivotMode', 'suppressAggFuncInHeader', 'suppressAggFuncInHeader', 'suppressAggAtRootLevel',
         'suppressFocusAfterRefresh', 'functionsPassive', 'functionsReadOnly', 'suppressRowHoverClass',
         'animateRows', 'groupSelectsFiltered', 'groupRemoveSingleChildren', 'enableRtl', 'suppressClickEdit',
         'enableGroupEdit', 'embedFullWidthRows', 'suppressTabbing', 'suppressPaginationPanel', 'floatingFilter',
         'groupHideOpenParents', 'groupMultiAutoColumn', 'pagination', 'stopEditingWhenGridLosesFocus',
-        'paginationAutoPageSize', 'suppressScrollOnNewData'
+        'paginationAutoPageSize', 'suppressScrollOnNewData', 'purgeClosedRowNodes', 'cacheQuickFilter'
     ];
 
     public static FUNCTION_PROPERTIES = ['headerCellRenderer', 'localeTextFunc', 'groupRowInnerRenderer', 'groupRowInnerRendererFramework',
@@ -65,7 +66,7 @@ export class ComponentUtil {
         'getNodeChildDetails', 'groupRowAggNodes', 'getRowNodeId', 'isFullWidthCell', 'fullWidthCellRenderer',
         'fullWidthCellRendererFramework', 'doesDataFlower', 'processSecondaryColDef','processSecondaryColGroupDef',
         'getBusinessKeyForNode', 'sendToClipboard', 'navigateToNextCell', 'tabToNextCell',
-        'processCellFromClipboard', 'getDocument'];
+        'processCellFromClipboard', 'getDocument', 'postProcessPopup'];
 
     public static ALL_PROPERTIES = ComponentUtil.ARRAY_PROPERTIES
         .concat(ComponentUtil.OBJECT_PROPERTIES)

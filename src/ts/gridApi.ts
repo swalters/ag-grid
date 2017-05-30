@@ -37,6 +37,7 @@ import {IPaginationService, ServerPaginationService} from "./rowModels/paginatio
 import {IDatasource} from "./rowModels/iDatasource";
 import {IEnterpriseDatasource} from "./interfaces/iEnterpriseDatasource";
 import {PaginationProxy} from "./rowModels/paginationProxy";
+import {IEnterpriseRowModel} from "./interfaces/iEnterpriseRowModel";
 
 
 export interface StartEditingCellParams {
@@ -79,6 +80,7 @@ export class GridApi {
     private inMemoryRowModel: IInMemoryRowModel;
     private infinitePageRowModel: InfiniteRowModel;
     private paginationService: IPaginationService;
+    private enterpriseRowModel: IEnterpriseRowModel;
 
     @PostConstruct
     private init(): void {
@@ -90,6 +92,9 @@ export class GridApi {
             case Constants.ROW_MODEL_TYPE_INFINITE:
             case Constants.ROW_MODEL_TYPE_VIRTUAL_DEPRECATED:
                 this.infinitePageRowModel = <InfiniteRowModel> this.rowModel;
+                break;
+            case Constants.ROW_MODEL_TYPE_ENTERPRISE:
+                this.enterpriseRowModel = <IEnterpriseRowModel> this.rowModel;
                 break;
         }
 
@@ -506,6 +511,27 @@ export class GridApi {
 
     public setHeaderHeight(headerHeight: number) {
         this.gridOptionsWrapper.setProperty(GridOptionsWrapper.PROP_HEADER_HEIGHT, headerHeight);
+        this.doLayout();
+    }
+
+    public setGroupHeaderHeight(headerHeight: number) {
+        this.gridOptionsWrapper.setProperty(GridOptionsWrapper.PROP_GROUP_HEADER_HEIGHT, headerHeight);
+        this.doLayout();
+    }
+
+    public setFloatingFiltersHeight(headerHeight: number) {
+        this.gridOptionsWrapper.setProperty(GridOptionsWrapper.PROP_FLOATING_FILTERS_HEIGHT, headerHeight);
+        this.doLayout();
+    }
+
+    public setPivotGroupHeaderHeight(headerHeight: number) {
+        this.gridOptionsWrapper.setProperty(GridOptionsWrapper.PROP_PIVOT_GROUP_HEADER_HEIGHT, headerHeight);
+        this.doLayout();
+    }
+
+    public setPivotHeaderHeight(headerHeight: number) {
+        this.gridOptionsWrapper.setProperty(GridOptionsWrapper.PROP_PIVOT_HEADER_HEIGHT, headerHeight);
+        this.doLayout();
     }
 
     public showToolPanel(show:any) {
@@ -545,11 +571,13 @@ export class GridApi {
     }
 
     public addEventListener(eventType: string, listener: Function): void {
-        this.eventService.addEventListener(eventType, listener);
+        let async = this.gridOptionsWrapper.useAsyncEvents();
+        this.eventService.addEventListener(eventType, listener, async);
     }
 
     public addGlobalListener(listener: Function): void {
-        this.eventService.addGlobalListener(listener);
+        let async = this.gridOptionsWrapper.useAsyncEvents();
+        this.eventService.addGlobalListener(listener, async);
     }
 
     public removeEventListener(eventType: string, listener: Function): void {
@@ -671,28 +699,46 @@ export class GridApi {
     }
 
     public refreshVirtualPageCache(): void {
-        console.warn('ag-Grid: refreshVirtualPageCache() is now called refreshInfinitePageCache(), please call refreshInfinitePageCache() instead');
-        this.refreshInfinitePageCache();
+        console.warn('ag-Grid: refreshVirtualPageCache() is now called refreshInfiniteCache(), please call refreshInfiniteCache() instead');
+        this.refreshInfiniteCache();
     }
 
     public refreshInfinitePageCache(): void {
+        console.warn('ag-Grid: refreshInfinitePageCache() is now called refreshInfiniteCache(), please call refreshInfiniteCache() instead');
+        this.refreshInfiniteCache();
+    }
+
+    public refreshInfiniteCache(): void {
         if (this.infinitePageRowModel) {
             this.infinitePageRowModel.refreshCache();
         } else {
-            console.warn(`ag-Grid: api.refreshVirtualPageCache is only available when rowModelType='virtual'.`);
+            console.warn(`ag-Grid: api.refreshInfiniteCache is only available when rowModelType='infinite'.`);
         }
     }
 
     public purgeVirtualPageCache(): void {
-        console.warn('ag-Grid: purgeVirtualPageCache() is now called purgeInfinitePageCache(), please call purgeInfinitePageCache() instead');
+        console.warn('ag-Grid: purgeVirtualPageCache() is now called purgeInfiniteCache(), please call purgeInfiniteCache() instead');
         this.purgeInfinitePageCache();
     }
 
     public purgeInfinitePageCache(): void {
+        console.warn('ag-Grid: purgeInfinitePageCache() is now called purgeInfiniteCache(), please call purgeInfiniteCache() instead');
+        this.purgeInfiniteCache();
+    }
+
+    public purgeInfiniteCache(): void {
         if (this.infinitePageRowModel) {
             this.infinitePageRowModel.purgeCache();
         } else {
-            console.warn(`ag-Grid: api.refreshVirtualPageCache is only available when rowModelType='virtual'.`);
+            console.warn(`ag-Grid: api.purgeInfiniteCache is only available when rowModelType='infinite'.`);
+        }
+    }
+
+    public purgeEnterpriseCache(route?: string[]): void {
+        if (this.enterpriseRowModel) {
+            this.enterpriseRowModel.purgeCache(route);
+        } else {
+            console.warn(`ag-Grid: api.purgeEnterpriseCache is only available when rowModelType='enterprise'.`);
         }
     }
 
@@ -731,15 +777,22 @@ export class GridApi {
     }
 
     public getVirtualPageState(): any {
-        console.warn('ag-Grid: getVirtualPageState() is now called getInfinitePageState(), please call getInfinitePageState() instead');
-        return this.getInfinitePageState();
+        console.warn('ag-Grid: getVirtualPageState() is now called getCacheBlockState(), please call getCacheBlockState() instead');
+        return this.getCacheBlockState();
     }
 
     public getInfinitePageState(): any {
+        console.warn('ag-Grid: getInfinitePageState() is now called getCacheBlockState(), please call getCacheBlockState() instead');
+        return this.getCacheBlockState();
+    }
+
+    public getCacheBlockState(): any {
         if (this.infinitePageRowModel) {
-            return this.infinitePageRowModel.getPageState();
+            return this.infinitePageRowModel.getBlockState();
+        } else if (this.enterpriseRowModel) {
+            return this.enterpriseRowModel.getBlockState();
         } else {
-            console.warn(`ag-Grid: api.getVirtualPageState is only available when rowModelType='virtual'.`);
+            console.warn(`ag-Grid: api.getCacheBlockState() is only available when rowModelType='infinite' or rowModelType='enterprise'.`);
         }
     }
 

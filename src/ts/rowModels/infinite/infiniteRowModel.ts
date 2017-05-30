@@ -12,6 +12,8 @@ import {Constants} from "../../constants";
 import {IDatasource} from "../iDatasource";
 import {InfiniteCache, InfiniteCacheParams} from "./infiniteCache";
 import {BeanStub} from "../../context/beanStub";
+import {RowNodeCache} from "../cache/rowNodeCache";
+import {RowNodeBlockLoader} from "../cache/rowNodeBlockLoader";
 
 @Bean('rowModel')
 export class InfiniteRowModel extends BeanStub implements IRowModel {
@@ -24,20 +26,29 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
     @Autowired('context') private context: Context;
 
     private infiniteCache: InfiniteCache;
+    private rowNodeBlockLoader: RowNodeBlockLoader;
 
     private datasource: IDatasource;
 
+    private rowHeight: number;
+
     public getRowBounds(index: number): {rowTop: number, rowHeight: number} {
-        if (_.missing(this.infiniteCache)) { return null; }
-        return this.infiniteCache.getRowBounds(index);
+        return {
+            rowHeight: this.rowHeight,
+            rowTop: this.rowHeight * index
+        };
     }
 
     @PostConstruct
     public init(): void {
         if (!this.gridOptionsWrapper.isRowModelInfinite()) { return; }
 
+        this.rowHeight = this.gridOptionsWrapper.getRowHeightAsNumber();
+
         this.addEventListeners();
         this.setDatasource(this.gridOptionsWrapper.getDatasource());
+
+        this.addDestroyFunc( () => this.destroyCache() );
     }
 
     public isLastRowFound(): boolean {
@@ -95,7 +106,7 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
             console.error('ag-Grid: since version 5.1.x, overflowSize is replaced with grid property paginationOverflowSize');
         }
 
-        if (_.exists(ds.pageSize)) {
+        if (_.exists(ds.blockSize)) {
             console.error('ag-Grid: since version 5.1.x, pageSize is replaced with grid property infinitePageSize');
         }
     }
@@ -129,6 +140,16 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
     }
 
     private resetCache(): void {
+        // if not first time creating a cache, need to destroy the old one
+        this.destroyCache();
+
+        let maxConcurrentRequests = this.gridOptionsWrapper.getMaxConcurrentDatasourceRequests();
+
+        // there is a bi-directional dependency between the loader and the cache,
+        // so we create loader here, and then pass dependencies in setDependencies() method later
+        this.rowNodeBlockLoader = new RowNodeBlockLoader(maxConcurrentRequests);
+        this.context.wireBean(this.rowNodeBlockLoader);
+
         let cacheSettings = <InfiniteCacheParams> {
             // the user provided datasource
             datasource: this.datasource,
@@ -137,14 +158,16 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
             filterModel: this.filterManager.getFilterModel(),
             sortModel: this.sortController.getSortModel(),
 
+            rowNodeBlockLoader: this.rowNodeBlockLoader,
+
             // properties - this way we take a snapshot of them, so if user changes any, they will be
             // used next time we create a new cache, which is generally after a filter or sort change,
             // or a new datasource is set
-            maxConcurrentRequests: this.gridOptionsWrapper.getMaxConcurrentDatasourceRequests(),
-            overflowSize: this.gridOptionsWrapper.getPaginationOverflowSize(),
+            maxConcurrentRequests: maxConcurrentRequests,
+            overflowSize: this.gridOptionsWrapper.getCacheOverflowSize(),
             initialRowCount: this.gridOptionsWrapper.getInfiniteInitialRowCount(),
-            maxBlocksInCache: this.gridOptionsWrapper.getMaxPagesInCache(),
-            pageSize: this.gridOptionsWrapper.getInfiniteBlockSize(),
+            maxBlocksInCache: this.gridOptionsWrapper.getMaxBlocksInCache(),
+            blockSize: this.gridOptionsWrapper.getCacheBlockSize(),
             rowHeight: this.gridOptionsWrapper.getRowHeightAsNumber(),
 
             // the cache could create this, however it is also used by the pages, so handy to create it
@@ -158,8 +181,8 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
         }
         // page size needs to be 1 or greater. having it at 1 would be silly, as you would be hitting the
         // server for one page at a time. so the default if not specified is 100.
-        if ( !(cacheSettings.pageSize>=1) ) {
-            cacheSettings.pageSize = 100;
+        if ( !(cacheSettings.blockSize>=1) ) {
+            cacheSettings.blockSize = 100;
         }
         // if user doesn't give initial rows to display, we assume zero
         if ( !(cacheSettings.initialRowCount>=1) ) {
@@ -171,13 +194,25 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
             cacheSettings.overflowSize = 1;
         }
 
-        // if not first time creating a cache, need to destroy the old one
-        if (this.infiniteCache) {
-            this.infiniteCache.destroy();
-        }
-
         this.infiniteCache = new InfiniteCache(cacheSettings);
         this.context.wireBean(this.infiniteCache);
+
+        this.infiniteCache.addEventListener(RowNodeCache.EVENT_CACHE_UPDATED, this.onCacheUpdated.bind(this));
+    }
+
+    private destroyCache(): void {
+        if (this.infiniteCache) {
+            this.infiniteCache.destroy();
+            this.infiniteCache = null;
+        }
+        if (this.rowNodeBlockLoader) {
+            this.rowNodeBlockLoader.destroy();
+            this.rowNodeBlockLoader = null;
+        }
+    }
+
+    private onCacheUpdated(): void {
+        this.eventService.dispatchEvent(Events.EVENT_MODEL_UPDATED);
     }
 
     public getRow(rowIndex: number): RowNode {
@@ -186,16 +221,25 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
 
     public forEachNode(callback: (rowNode: RowNode, index: number)=> void): void {
         if (this.infiniteCache) {
-            this.infiniteCache.forEachNode(callback);
+            this.infiniteCache.forEachNodeDeep(callback, new NumberSequence());
         }
     }
 
     public getCurrentPageHeight(): number {
-        return this.infiniteCache ? this.infiniteCache.getCurrentPageHeight() : 0;
+        return this.getRowCount() * this.rowHeight;
     }
 
     public getRowIndexAtPixel(pixel: number): number {
-        return this.infiniteCache ? this.infiniteCache.getRowIndexAtPixel(pixel) : -1;
+        if (this.rowHeight !== 0) { // avoid divide by zero error
+            var rowIndexForPixel = Math.floor(pixel / this.rowHeight);
+            if (rowIndexForPixel > this.getPageLastRow()) {
+                return this.getPageLastRow();
+            } else {
+                return rowIndexForPixel;
+            }
+        } else {
+            return 0;
+        }
     }
 
     public getPageFirstRow(): number {
@@ -203,11 +247,11 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
     }
 
     public getPageLastRow(): number {
-        return this.infiniteCache ? this.infiniteCache.getRowCount() -1 : 0;
+        return this.infiniteCache ? this.infiniteCache.getVirtualRowCount() -1 : 0;
     }
 
     public getRowCount(): number {
-        return this.infiniteCache ? this.infiniteCache.getRowCount() : 0;
+        return this.infiniteCache ? this.infiniteCache.getVirtualRowCount() : 0;
     }
 
     public insertItemsAtIndex(index: number, items: any[], skipRefresh: boolean): void {
@@ -263,9 +307,9 @@ export class InfiniteRowModel extends BeanStub implements IRowModel {
         }
     }
 
-    public getPageState(): any {
-        if (this.infiniteCache) {
-            return this.infiniteCache.getPageState();
+    public getBlockState(): any {
+        if (this.rowNodeBlockLoader) {
+            return this.rowNodeBlockLoader.getBlockState();
         } else {
             return null;
         }

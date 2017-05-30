@@ -243,28 +243,29 @@ export class GridSerializer {
         }
 
         // first pass, put in the header names of the cols
-        if (!skipHeader || columnGroups) {
+        if (columnGroups) {
             let groupInstanceIdCreator: GroupInstanceIdCreator = new GroupInstanceIdCreator();
-            let displayedGroups: ColumnGroupChild[] = this.displayedGroupCreator.createDisplayedGroups (
+            let displayedGroups: ColumnGroupChild[] = this.displayedGroupCreator.createDisplayedGroups(
                 columnsToExport,
                 this.columnController.getGridBalancedTree(),
                 groupInstanceIdCreator
             );
-            if (columnGroups && displayedGroups.length > 0 && displayedGroups[0] instanceof ColumnGroup) {
-                let gridRowIterator : RowSpanningAccumulator = gridSerializingSession.onNewHeaderGroupingRow();
-                let columnIndex :number = 0;
-                displayedGroups.forEach((it:ColumnGroupChild)=>{
-                    let casted:ColumnGroup = it as ColumnGroup;
-                    gridRowIterator.onColumn(casted.getDefinition().headerName, columnIndex ++, casted.getChildren().length - 1);
+            if (displayedGroups.length > 0 && displayedGroups[0] instanceof ColumnGroup) {
+                let gridRowIterator: RowSpanningAccumulator = gridSerializingSession.onNewHeaderGroupingRow();
+                let columnIndex: number = 0;
+                displayedGroups.forEach((columnGroupChild: ColumnGroupChild) => {
+                    let columnGroup: ColumnGroup = columnGroupChild as ColumnGroup;
+                    let colDef = columnGroup.getDefinition();
+                    gridRowIterator.onColumn(colDef != null ? colDef.headerName : '', columnIndex++, columnGroup.getChildren().length - 1);
                 });
             }
+        }
 
-            if (!skipHeader){
-                let gridRowIterator = gridSerializingSession.onNewHeaderRow();
-                columnsToExport.forEach((column, index)=>{
-                    gridRowIterator.onColumn (column, index, null)
-                });
-            }
+        if (!skipHeader){
+            let gridRowIterator = gridSerializingSession.onNewHeaderRow();
+            columnsToExport.forEach((column, index)=>{
+                gridRowIterator.onColumn (column, index, null)
+            });
         }
 
         this.floatingRowModel.forEachFloatingTopRow(processRow);

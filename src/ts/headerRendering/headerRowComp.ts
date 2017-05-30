@@ -75,9 +75,36 @@ export class HeaderRowComp extends Component {
     }
 
     private onRowHeightChanged(): void {
-        var rowHeight = this.gridOptionsWrapper.getHeaderHeight();
-        this.getGui().style.top = (this.dept * rowHeight) + 'px';
-        this.getGui().style.height = rowHeight + 'px';
+        let headerRowCount = this.columnController.getHeaderRowCount();
+        let sizes:number[]=[];
+
+        let numberOfFloating = 0;
+        let groupHeight:number;
+        let headerHeight:number;
+        if (!this.columnController.isPivotMode()){
+            if (this.gridOptionsWrapper.isFloatingFilter()){
+                headerRowCount ++;
+            }
+            numberOfFloating = (this.gridOptionsWrapper.isFloatingFilter()) ? 1 : 0;
+            groupHeight = this.gridOptionsWrapper.getGroupHeaderHeight();
+            headerHeight = this.gridOptionsWrapper.getHeaderHeight();
+        }else{
+            numberOfFloating = 0;
+            groupHeight = this.gridOptionsWrapper.getPivotGroupHeaderHeight();
+            headerHeight = this.gridOptionsWrapper.getPivotHeaderHeight();
+        }
+        let numberOfNonGroups = 1 + numberOfFloating;
+        let numberOfGroups = headerRowCount - numberOfNonGroups;
+
+        for (let i=0; i<numberOfGroups; i++) sizes.push(groupHeight);
+        sizes.push(headerHeight);
+        for (let i=0; i<numberOfFloating; i++) sizes.push(this.gridOptionsWrapper.getFloatingFiltersHeight());
+
+        let rowHeight = 0;
+        for (let i=0; i<this.dept; i++) rowHeight+=sizes[i];
+
+        this.getGui().style.top = rowHeight + 'px';
+        this.getGui().style.height = sizes[this.dept] + 'px';
     }
 
     //noinspection JSUnusedLocalSymbols
@@ -89,6 +116,13 @@ export class HeaderRowComp extends Component {
         this.setWidth();
 
         this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_HEADER_HEIGHT, this.onRowHeightChanged.bind(this) );
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_PIVOT_HEADER_HEIGHT, this.onRowHeightChanged.bind(this) );
+
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_GROUP_HEADER_HEIGHT, this.onRowHeightChanged.bind(this) );
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_PIVOT_GROUP_HEADER_HEIGHT, this.onRowHeightChanged.bind(this) );
+
+        this.addDestroyableEventListener(this.gridOptionsWrapper, GridOptionsWrapper.PROP_FLOATING_FILTERS_HEIGHT, this.onRowHeightChanged.bind(this) );
+
         this.addDestroyableEventListener(this.eventService, Events.EVENT_VIRTUAL_COLUMNS_CHANGED, this.onVirtualColumnsChanged.bind(this) );
         this.addDestroyableEventListener(this.eventService, Events.EVENT_DISPLAYED_COLUMNS_CHANGED, this.onDisplayedColumnsChanged.bind(this) );
         this.addDestroyableEventListener(this.eventService, Events.EVENT_COLUMN_RESIZED, this.onColumnResized.bind(this) );
