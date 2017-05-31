@@ -7,6 +7,7 @@ export declare class PopupService {
     private gridCore;
     private gridOptionsWrapper;
     private getPopupParent();
+    private getOuterContainer(element);
     positionPopupForMenu(params: {
         eventSource: any;
         ePopup: HTMLElement;

@@ -191,10 +191,8 @@ var GroupCellRenderer = (function (_super) {
     GroupCellRenderer.prototype.addValueElement = function () {
         var params = this.params;
         var rowNode = this.params.node;
-        if (params.innerRenderer) {
-            this.createFromInnerRenderer();
-        }
-        else if (rowNode.footer) {
+        //singletree changed to properly present group values when using innerRenderer
+        if (rowNode.footer) {
             this.createFooterCell();
         }
         else if (rowNode.group) {
@@ -202,7 +200,12 @@ var GroupCellRenderer = (function (_super) {
             this.addChildCount();
         }
         else {
-            this.createLeafCell();
+            if (params.innerRenderer) {
+                this.createFromInnerRenderer();
+            }
+            else {
+                this.createLeafCell();
+            }
         }
     };
     GroupCellRenderer.prototype.createFromInnerRenderer = function () {
