@@ -783,6 +783,9 @@ export class GridPanel extends BeanStub {
             });
         }
         event.preventDefault();
+      //singletree start
+      event.stopPropagation();
+      //singletree end
         return false;
     }
 
@@ -793,6 +796,10 @@ export class GridPanel extends BeanStub {
 
         this.clipboardService.copyToClipboard();
         event.preventDefault();
+
+        //singletree start
+        event.stopPropagation();
+        //singletree end
 
         // the copy operation results in loosing focus on the cell,
         // because of the trickery the copy logic uses with a temporary
@@ -807,6 +814,10 @@ export class GridPanel extends BeanStub {
     private onCtrlAndV(event: KeyboardEvent): boolean {
         if (!this.rangeController) { return; }
 
+      //singletree start
+      event.stopPropagation();
+      //singletree end
+
         this.clipboardService.pasteFromClipboard();
         return false;
     }
@@ -815,6 +826,9 @@ export class GridPanel extends BeanStub {
         if (!this.clipboardService) { return; }
         this.clipboardService.copyRangeDown();
         event.preventDefault();
+      //singletree start
+      event.stopPropagation();
+      //singletree end
         return false;
     }
 

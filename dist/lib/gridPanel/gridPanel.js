@@ -621,6 +621,9 @@ var GridPanel = (function (_super) {
             });
         }
         event.preventDefault();
+        //singletree start
+        event.stopPropagation();
+        //singletree end
         return false;
     };
     GridPanel.prototype.onCtrlAndC = function (event) {
@@ -630,6 +633,9 @@ var GridPanel = (function (_super) {
         var focusedCell = this.focusedCellController.getFocusedCell();
         this.clipboardService.copyToClipboard();
         event.preventDefault();
+        //singletree start
+        event.stopPropagation();
+        //singletree end
         // the copy operation results in loosing focus on the cell,
         // because of the trickery the copy logic uses with a temporary
         // widget. so we set it back again.
@@ -642,6 +648,9 @@ var GridPanel = (function (_super) {
         if (!this.rangeController) {
             return;
         }
+        //singletree start
+        event.stopPropagation();
+        //singletree end
         this.clipboardService.pasteFromClipboard();
         return false;
     };
@@ -651,6 +660,9 @@ var GridPanel = (function (_super) {
         }
         this.clipboardService.copyRangeDown();
         event.preventDefault();
+        //singletree start
+        event.stopPropagation();
+        //singletree end
         return false;
     };
     GridPanel.prototype.createOverlayTemplate = function (name, defaultTemplate, userProvidedTemplate) {
