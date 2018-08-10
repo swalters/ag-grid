@@ -39,6 +39,7 @@ export declare class GridCore {
     private createSouthPanel();
     private onRowGroupChanged();
     private addWindowResizeListener();
+    private getOuterContainerForToolPanel(element);
     private periodicallyDoLayout();
     showToolPanel(show: any): void;
     isToolPanelShowing(): boolean;

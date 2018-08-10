@@ -9,7 +9,7 @@ export declare class Component extends BeanStub implements IComponent<any> {
     private eGui;
     private childComponents;
     private annotatedEventListeners;
-    private visible;
+    visible: boolean;
     constructor(template?: string);
     instantiate(context: Context): void;
     private instantiateRecurse(parentNode, context);

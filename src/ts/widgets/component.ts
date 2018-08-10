@@ -13,7 +13,10 @@ export class Component extends BeanStub implements IComponent<any> {
 
     private annotatedEventListeners: any[] = [];
 
-    private visible = true;
+    //singletree begin
+    //changed to public for toolPanel
+    public visible = true;
+    //singletree end
 
     constructor(template?: string) {
         super();

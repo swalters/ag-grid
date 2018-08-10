@@ -20,10 +20,13 @@ var utils_1 = require("../utils");
 var beanStub_1 = require("../context/beanStub");
 var Component = (function (_super) {
     __extends(Component, _super);
+    //singletree end
     function Component(template) {
         var _this = _super.call(this) || this;
         _this.childComponents = [];
         _this.annotatedEventListeners = [];
+        //singletree begin
+        //changed to public for toolPanel
         _this.visible = true;
         if (template) {
             _this.setTemplate(template);

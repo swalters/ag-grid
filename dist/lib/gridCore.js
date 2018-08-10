@@ -167,6 +167,29 @@ var GridCore = (function () {
         window.addEventListener('resize', eventListener);
         this.destroyFunctions.push(function () { return window.removeEventListener('resize', eventListener); });
     };
+    //singletree begin
+    //singletree method to find outermost grid container
+    GridCore.prototype.getOuterContainerForToolPanel = function (element) {
+        var lastFoundContainer;
+        var traverseElement = element;
+        while (traverseElement.parentElement) {
+            if (traverseElement.id == 'borderLayout_eRootPanel') {
+                lastFoundContainer = traverseElement;
+            }
+            traverseElement = traverseElement.parentElement;
+        }
+        var toolPanelContainer = null;
+        if (lastFoundContainer) {
+            if (this.gridOptionsWrapper.isEnableRtl()) {
+                toolPanelContainer = lastFoundContainer.children.centerRow.children.west;
+            }
+            else {
+                toolPanelContainer = lastFoundContainer.children.centerRow.children.east;
+            }
+        }
+        return toolPanelContainer;
+    };
+    //singletree end
     GridCore.prototype.periodicallyDoLayout = function () {
         var _this = this;
         if (!this.finished) {
@@ -196,12 +219,39 @@ var GridCore = (function () {
         }
         this.toolPanelShowing = show;
         if (this.toolPanel) {
+            //singletree begin
+            //adds the toolpanel to the top layer grid, and adds ag-hidden to any other toolPanels open
+            var outerContainer = this.getOuterContainerForToolPanel(this.toolPanel.getGui());
+            if (show) {
+                if (outerContainer) {
+                    //check for other toolbars that are currently visible and hide them
+                    document.getElementsByClassName("ag-tool-panel");
+                    var toolPanels = document.querySelectorAll('div.ag-tool-panel:not(.ag-hidden)');
+                    var array = [].slice.call(toolPanels);
+                    if (array.length > 0) {
+                        array.forEach(function (toolPanel) {
+                            if (toolPanel)
+                                utils_1.Utils.addOrRemoveCssClass(toolPanel, 'ag-hidden', true);
+                        });
+                    }
+                    outerContainer.appendChild(this.toolPanel.getGui());
+                }
+            }
+            //singletree end
             this.toolPanel.setVisible(show);
             this.eRootPanel.doLayout();
         }
     };
     GridCore.prototype.isToolPanelShowing = function () {
+        //singletree begin
+        //changed because we are removing the display:block if another level (trackPoint/request/requestee)
+        //toolPanel is called
+        if (this.toolPanelShowing) {
+            this.toolPanel.visible = !this.toolPanel.getGui().classList.contains('ag-hidden');
+            this.toolPanelShowing = this.toolPanel.visible;
+        }
         return this.toolPanelShowing;
+        //singletree end
     };
     GridCore.prototype.destroy = function () {
         this.finished = true;
